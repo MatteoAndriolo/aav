@@ -11,6 +11,7 @@ from Bio.Blast import NCBIWWW, NCBIXML
 from Bio import SearchIO
 from Bio.PDB import PDBParser, PDBList
 import nglview as nv
+from pymol import cmd
 
 
 f_cache=""
@@ -60,26 +61,33 @@ def downloadpdbfile(pdb_id:str):
 def getStructure(pdb_id:str):
     downloadpdbfile(pdb_id)
     parser=PDBParser()
-    structure = parser.get_structure(pdb_id,f"{pdb_id}.pdb")
+    return parser.get_structure(pdb_id,f"{pdb_id}.pdb")
+
+
+def showStructureNV(structure):
     nv.show_biopython(structure, gui=True)
 
-
+def showStructurePyMOL(structura=None,pdb_id=None):
+    #cmd.fragment('ala')
+    cmd.fetch(pdb_id)
+    cmd.zoom()
+    cmd.png('tmp/test.png', 1920, 1080)
 
 
 if __name__=="__main__":
-    log.basicConfig(level=log.DEBUG)
-    piklereceived=unpickleObject("blast_record.pkl")
-    hit_id=piklereceived[1].blast_id #"pdb|6PXV|D"
-    pdb_id=hit_id.split("|")[1]
-    getStructure(pdb_id)
-    exit(-5)
+    #log.basicConfig(level=log.DEBUG)
+    #piklereceived=unpickleObject("blast_record.pkl")
+    #hit_id=piklereceived[1].blast_id #"pdb|6PXV|D"
+    #pdb_id=hit_id.split("|")[1]
+    #getStructure(pdb_id)
+    showStructurePyMOL(pdb_id="6pxv")
 
 
-    while True:
-        sequence=process_name(input("Inserisci nome=\t"))
-        print(sequence)
-        #name="MALWMRLLPLLALLALWGPDPAAAFVNQHLCGSHLVEALYLVCGERGFFY"
-        blast_results=get_alignment(sequence)
-        pickleObject(blast_results, "insuline")
+    #while True:
+        #sequence=process_name(input("Inserisci nome=\t"))
+        #print(sequence)
+        ##name="MALWMRLLPLLALLALWGPDPAAAFVNQHLCGSHLVEALYLVCGERGFFY"
+        #blast_results=get_alignment(sequence)
+        #pickleObject(blast_results, "insuline")
 
     
