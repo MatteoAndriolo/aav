@@ -5,8 +5,6 @@ import logging as log
 from sqlite3 import paramstyle
 from Bio.Seq import Seq
 from Bio.Blast import NCBIWWW
-from Bio import SearchIO, SeqIO
-from Bio import SeqIO
 from Bio.Blast import NCBIWWW, NCBIXML
 from Bio import SearchIO
 from Bio.PDB import PDBParser, PDBList
@@ -81,7 +79,6 @@ def showStructurePyMOL(structura=None,pdb_id=None):
 
 
 if __name__=="__main__":
-    #log.basicConfig(level=log.DEBUG)
     #piklereceived=unpickleObject("blast_record.pkl")
     #hit_id=piklereceived[1].blast_id #"pdb|6PXV|D"
     #pdb_id=hit_id.split("|")[1]
