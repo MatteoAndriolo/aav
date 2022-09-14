@@ -1,3 +1,4 @@
+from msilib import sequence
 from pathlib import Path
 import pickle
 import re
@@ -14,17 +15,20 @@ import nglview as nv
 from pymol import cmd
 
 
-f_cache=""
+
+def pickleObject(alignment:object, name:str)-> None:
+    # Save object in a file 
+    with open(f'{name}.pkl', 'wb') as outp:
+        pickle.dump(alignment, outp, pickle.HIGHEST_PROTOCOL)
+
+def unpickleObject(path:str=None, Path:Path=None)-> None:
+    # Load Object from file
+    with open(path, 'rb') as outp:
+        return pickle.load(outp)
+
+
+
 amm=[ 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
-
-def get_alignment(sequence: str):
-    log.info("get_alignment: Blast job started")
-    result_handle=NCBIWWW.qblast("blastp","pdb",sequence)
-    blast_record=SearchIO.read(result_handle,"blast-xml")
-    log.info("get_alignment: Blast result received")
-    log.debug("get_alingment: Blast results\n{blast_record}\n\n"+50*"-")
-    return blast_record
-
 
 def replace(ch:str)->str:
     if ch in amm:
@@ -41,16 +45,19 @@ def process_name(name:str)->str:
     newname="".join(newname)
     return newname
 
+def get_alignment(sequence: str):
+    log.info("get_alignment: Blast job started")
+    result_handle=NCBIWWW.qblast("blastp","pdb",sequence)
+    blast_record=SearchIO.read(result_handle,"blast-xml")
+    pickleObject(blast_record,"backup.txt")
+    log.info("get_alignment: Blast result received")
+    log.debug("get_alingment: Blast results\n{blast_record}\n\n"+50*"-")
+    return blast_record
 
-def pickleObject(alignment:object, name:str)-> None:
-    # Save object in a file 
-    with open(f'{name}.pkl', 'wb') as outp:
-        pickle.dump(alignment, outp, pickle.HIGHEST_PROTOCOL)
-
-def unpickleObject(path:str=None, Path:Path=None)-> None:
-    # Load Object from file
-    with open(path, 'rb') as outp:
-        return pickle.load(outp)
+def blastrecors2pdbid(blast_record):
+    hit_id=blast_record[1].blast_id #"pdb|6PXV|D"
+    pdb_id=hit_id.split("|")[1]
+    return pdb_id
     
 def downloadpdbfile(pdb_id:str):
     pdblist_manager=PDBList()
@@ -70,6 +77,7 @@ def showStructureNV(structure):
 def showStructurePyMOL(structura=None,pdb_id=None):
     #cmd.fragment('ala')
     cmd.fetch(pdb_id)
+    cmd.spectrum()
     cmd.zoom()
     cmd.png('tmp/test.png', 1920, 1080)
 
@@ -80,7 +88,10 @@ if __name__=="__main__":
     #hit_id=piklereceived[1].blast_id #"pdb|6PXV|D"
     #pdb_id=hit_id.split("|")[1]
     #getStructure(pdb_id)
-    showStructurePyMOL(pdb_id="6pxv")
+    blast_record=get_alignment("MARCGCGSTANQG")
+    pdb_id=blastrecors2pdbid(blast_record)
+    
+    showStructurePyMOL(pdb_id)
 
 
     #while True:
