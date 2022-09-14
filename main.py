@@ -26,7 +26,15 @@ def unpickleObject(path:str=None, Path:Path=None)-> None:
 
 amm=[ 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
 
-def replace(ch:str)->str:
+
+def _replace(ch:str)->str:
+    ''' 
+    Utility function for replacing not aminoacids characters
+        Param:
+            ch| character in input
+        Return:
+            a| new character
+    '''
     if ch in amm:
         return ch
     else:
@@ -35,15 +43,32 @@ def replace(ch:str)->str:
             ))[0]
         return a
 
-def process_name(name:str)->str:
+def name2protein(name:str)->str:
+    '''
+    Function for converting name 2 polypeptide sequence
+    
+    Input:
+        name| input name
+    Return:
+        sequence| motif
+    '''
     name=re.sub(r'\W+', '', name)
-    newname=list(map(replace, [*name]))
+    newname=list(map(_replace, [*name]))
     newname="".join(newname)
     return newname
 
 def get_alignment(sequence: str):
+    '''
+    Execute blast alignment 
+
+    Input:
+        sequence| sequence in input
+    Return:
+        blast_record| specific result object 
+    '''
     log.info("get_alignment: Blast job started")
-    result_handle=NCBIWWW.qblast("blastp","pdb",sequence)
+    #result_handle=NCBIWWW.qblast("blastp","pdb",sequence, auto_format=True)
+    result_handle=NCBIWWW.qblast("blastp","nr",sequence, auto_format=True)
     blast_record=SearchIO.read(result_handle,"blast-xml")
     pickleObject(blast_record,"backup.txt")
     log.info("get_alignment: Blast result received")
@@ -51,18 +76,26 @@ def get_alignment(sequence: str):
     return blast_record
 
 def blastrecors2pdbid(blast_record):
+    '''
+    Parse blast_record
+    
+    Input:
+        blast_record| object
+    Return:
+        pdb_id| pdb_id
+    '''
     hit_id=blast_record[1].blast_id #"pdb|6PXV|D"
     pdb_id=hit_id.split("|")[1]
     return pdb_id
     
-def downloadpdbfile(pdb_id:str):
+def _downloadpdbfile(pdb_id:str):
     pdblist_manager=PDBList()
     log.debug("downloadpdbfiles: downloading")
     pdblist_manager.retrieve_pdb_file(pdb=[pdb_id])
     
     
 def getStructure(pdb_id:str):
-    downloadpdbfile(pdb_id)
+    _downloadpdbfile(pdb_id)
     parser=PDBParser()
     return parser.get_structure(pdb_id,f"{pdb_id}.pdb")
 
@@ -71,6 +104,9 @@ def showStructureNV(structure):
     nv.show_biopython(structure, gui=True)
 
 def showStructurePyMOL(structura=None,pdb_id=None):
+    '''
+    Show structure using pymodule scripting
+    '''
     #cmd.fragment('ala')
     cmd.fetch(pdb_id)
     cmd.spectrum()
