@@ -1,4 +1,3 @@
-from msilib import sequence
 from pathlib import Path
 import pickle
 import re
@@ -25,7 +24,6 @@ def unpickleObject(path:str=None, Path:Path=None)-> None:
     # Load Object from file
     with open(path, 'rb') as outp:
         return pickle.load(outp)
-
 
 
 amm=[ 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
@@ -89,6 +87,7 @@ if __name__=="__main__":
     #pdb_id=hit_id.split("|")[1]
     #getStructure(pdb_id)
     blast_record=get_alignment("MARCGCGSTANQG")
+    pickleObject(blast_record, "backup/blastrecord")
     pdb_id=blastrecors2pdbid(blast_record)
     
     showStructurePyMOL(pdb_id)
