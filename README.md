@@ -2,3 +2,6 @@
 	* Search how-to using software like (mini)conda, anaconda, venv.
 2. Activate virtual enviroment
 3. launch "jupyter-lab <folder>"
+
+
+[pymol wiki](https://pymolwiki.org/index.php/Main_Page)
