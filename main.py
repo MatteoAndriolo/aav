@@ -1,8 +1,8 @@
+from concurrent.futures import process
 from pathlib import Path
 import pickle
 import re
 import logging as log
-from sqlite3 import paramstyle
 from Bio.Seq import Seq
 from Bio.Blast import NCBIWWW
 from Bio.Blast import NCBIWWW, NCBIXML
@@ -10,6 +10,13 @@ from Bio import SearchIO
 from Bio.PDB import PDBParser, PDBList
 import nglview as nv
 from pymol import cmd
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support import expected_conditions as EC
 
 
 
@@ -106,6 +113,9 @@ def showStructureNV(structure):
 def showStructurePyMOL(structura=None,pdb_id=None):
     '''
     Show structure using pymodule scripting
+    
+    Input:
+    pdb_id| pdb id of protein
     '''
     #cmd.fragment('ala')
     cmd.fetch(pdb_id)
@@ -114,16 +124,128 @@ def showStructurePyMOL(structura=None,pdb_id=None):
     cmd.png('tmp/test.png', 1920, 1080)
 
 
+
+# SELENIUM WEB SCRAPING
+
+def _generate_url_searchmotif(motif:str)->str:
+    url="https://www.rcsb.org/search?request="
+    query:dict={
+            "query": {
+                "type": "terminal",
+                "service": "seqmotif",
+                "parameters": {
+                "value": motif,
+                "pattern_type": "prosite",
+                "sequence_type": "protein"
+                }
+            },
+        "return_type": "polymer_entity"
+        }
+    url=url+str(query)
+    url=url.replace(" ","").replace("'",'"')
+    return url
+
+def _generate_url_structure(pdb_id:str):
+  url=f"https://www.rcsb.org/structure/{pdb_id}"
+  return url
+
+def find_protein_pdb(amm_seq:str, )-> str:
+    '''
+    Given an amminoacid sequence, search it on PDB as a motif structure. 
+    Return first result.
+
+    Input:
+        amm_seq| amminoacid sequence
+    Output:
+        pdb_id| first result
+    '''
+    options = Options()
+    options.binary_location = "/usr/sbin/google-chrome-stable"
+    options.add_argument("user-data-dir=/home/matteo/cache")
+    driver = webdriver.Chrome(chrome_options = options, executable_path='/home/matteo/chromedriver_linux64/chromedriver')
+    driver.get(_generate_url_searchmotif(amm_seq))
+    try:
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "results-item"))
+        )
+        elements=driver.find_elements(By.TAG_NAME,"h3")
+        pdb_id=re.findall(r"[A-Z\d]{4}",elements[0].accessible_name)[0]
+    except NoSuchElementException:
+        print("not found")
+
+    driver.quit()
+
+    return pdb_id
+
+
 if __name__=="__main__":
     #piklereceived=unpickleObject("blast_record.pkl")
     #hit_id=piklereceived[1].blast_id #"pdb|6PXV|D"
     #pdb_id=hit_id.split("|")[1]
     #getStructure(pdb_id)
-    blast_record=get_alignment("MARCGCGSTANQG")
-    pickleObject(blast_record, "backup/blastrecord")
-    pdb_id=blastrecors2pdbid(blast_record)
-    
-    showStructurePyMOL(pdb_id)
+    #blast_record=get_alignment('''>sp|P01308|INS_HUMAN OS=Homo sapiens OX=9606 GN=INS PE=1 SV=1
+    #MALWMRLLPL LALLALWGPD PAAAFVNQHL CGSHLVEALY LVCGERGFFY TPKTRREAED
+    #LQVGQVELGG GPGAGSLQPL ALEGSLQKRG IVEQCCTSIC SLYQLENYCN''')
+    #pickleObject(blast_record, "backup/blastrecord")
+    #pdb_id=blastrecors2pdbid(blast_record)
+    #showStructurePyMOL(pdb_id)
+
+    #sequence=name2protein(input("Inserisci nome=\t"))
+    #pdb_id=find_protein_pdb(sequence)
+    #showStructurePyMOL(pdb_id=pdb_id)
+
+
+    url="https://www.rcsb.org/search?request="
+    search_motif="MATTAMAL"
+    query:dict={
+    "query": {
+        "type": "terminal",
+        "service": "seqmotif",
+        "parameters": {
+        "value": search_motif,
+        "pattern_type": "prosite",
+        "sequence_type": "protein"
+        }
+    },
+    "return_type": "polymer_entity"
+    }
+    url=url+str(query)
+    url=url.replace(" ","").replace("'",'"')
+
+
+    options = Options()
+    options.binary_location = "/usr/sbin/google-chrome-stable"
+    #options.add_argument("user-data-dir=/home/matteo/cache")
+    driver = webdriver.Chrome(chrome_options = options, executable_path='/home/matteo/chromedriver_linux64/chromedriver')
+    driver.get(url)
+    print("Chrome Browser Invoked")
+
+    #WebDriverWait wait = new WebDriverWait(webDriver, timeoutInSeconds);
+    #wait.until(ExpectedConditions.visibilityOfElementLocated(By.id<locator>));
+    try:
+        element = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "results-item"))
+        )
+    except NoSuchElementException:
+        print("not found")
+
+    ##driver.find_element((By.CLASS_NAME, "results-item"))
+    for el in driver.find_elements(By.TAG_NAME,"h3"):
+        print(re.findall(r"[A-Z\d]{4}",el.accessible_name)[0])
+    #print(driver.page_source.count("results-item"))
+    try:
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "results-item"))
+        )
+        elements=driver.find_elements(By.TAG_NAME,"h3")
+        pdb_id=re.findall(r"[A-Z\d]{4}",elements[0].accessible_name)[0]
+    except NoSuchElementException:
+        print("not found")
+    driver.get(_generate_url_structure(pdb_id))
+    input("wait press button")
+
+    driver.quit()
+
 
 
     #while True:
